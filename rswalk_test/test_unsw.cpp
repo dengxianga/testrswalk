@@ -4,6 +4,8 @@ using namespace std;
 
 int main() {
 	cout<<"hello world"<<endl;
+	Walk2014Generator myWalk;
+	cout<<myWalk.isActive()<<endl;
 	double sol = 1 + 1;
 	return 0;
 }
