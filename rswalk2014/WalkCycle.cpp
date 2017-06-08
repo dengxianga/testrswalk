@@ -30,6 +30,7 @@ WalkCycle::WalkCycle(float useForwardL, float useForwardR, float useLeft,
    }
 }
 
+/////////////// NOTE: liftL and liftR are never used or changed anywhere //////////////////
 void WalkCycle::generateWalk(float &forwardL, float &forwardR,
                              float &leftL, float &leftR,
                              float &turnLR, float &liftL, float &liftR) {

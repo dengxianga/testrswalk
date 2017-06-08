@@ -1,5 +1,7 @@
 #include <Walk2014Generator.hpp>
+#include <WalkCycle.hpp>
 #include <iostream>
+#include <unistd.h>
 using namespace std;
 
 enum Sensor {
@@ -141,11 +143,50 @@ void test_makeJoints(Walk2014Generator myWalk) {
 	}
 }
 
+void test_WalkCycle(WalkCycle myWC) {
+	//cout << "myWalkCycle.useForwardL:  " << myWalkCycle.useForwardL << endl;
+	float forwardL, forwardR, leftL, leftR, turnLR, liftL, liftR;
+	forwardL = 1.0f;
+	while (1) {
+		cout << "t: " << myWC.t << "   T: " << myWC.T << endl;
+
+		cout << myWC.useForwardL << ", ";
+		cout << myWC.useForwardR << ", ";
+		cout << myWC.useLeft << ", ";
+		cout << myWC.useTurn << endl;
+
+		cout << forwardL << ", ";
+		cout << forwardR << ", ";
+		cout << leftL << ", ";
+		cout << leftR << ", ";
+		cout << turnLR << ", ";
+		cout << liftL << ", ";
+		cout << liftR << "\n" << endl;
+		sleep(1);
+
+		myWC.generateWalk(forwardL, forwardR, leftL, leftR, turnLR, liftL, liftR);
+		myWC.next();
+	}
+//		unix.usleep(100000);
+//		myWC.generateWalk(myWC.forwardL,
+//					myWC.forwardR,
+//					myWC.leftL,
+//					myWC.leftR,
+//					myWC.turnLR,
+//					myWC.liftL,
+//					myWC.liftR);
+
+
+}
+
 int main() {
 	cout<<"START"<<endl;
 
-	Walk2014Generator myWalk;
-	test_makeJoints(myWalk);
+	//Walk2014Generator myWalk;
+	//test_makeJoints(myWalk);
+
+	WalkCycle myWalkCycle(1.0f, 0.0f, 1.0f, 0.0f, 0.5f, 0.0f);
+	test_WalkCycle(myWalkCycle);
 
 	cout << "DONE" << endl;
 
