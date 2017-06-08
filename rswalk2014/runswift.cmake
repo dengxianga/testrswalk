@@ -26,6 +26,7 @@ SET(RSWALK_SRCS
    GyroConfig.cpp
 
    # Motion
+   MotionAdapter.cpp
    ActionGenerator.cpp
    BodyModel.cpp
    ClippedGenerator.cpp
