@@ -1,0 +1,1 @@
+/usr/bin/c++       CMakeFiles/test_unsw.dir/test_walkGenerator.o  -o test_unsw  -L/home/nao/testrswalk/rswalk2014 -rdynamic -lrswalk2014 -Wl,-rpath,/home/nao/testrswalk/rswalk2014 

@@ -45,7 +45,7 @@ SET(RSWALK_SRCS
 
 ############################ CHECK LIBRARY / EXECUTABLE OPTION
 
-ADD_LIBRARY(rswalk2014 STATIC ${RSWALK_SRCS} )
+ADD_LIBRARY(rswalk2014 SHARED ${RSWALK_SRCS} )
 #add_executable(test test_unsw.cpp)
 
 find_package(PythonLibs 2 REQUIRED)

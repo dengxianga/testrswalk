@@ -1,5 +1,7 @@
-include_directories(/home/nao/testunsw/testunsw/rswalk2014)
-link_directories(/home/nao/testunsw/testunsw/rswalk2014)
+include_directories(/home/nao/testrswalk/rswalk2014)
+link_directories(/home/nao/testrswalk/rswalk2014)
 
-add_executable(test_unsw test_unsw.cpp)
+add_executable(test_unsw test_RSWalkModule2014.cpp)
 target_link_libraries(test_unsw rswalk2014) # librswalk2014.so is found in ${CMAKE_SOURCE_DIR}/lib
+
+MESSAGE("CMAKE_SOURCE_DIR: " ${CMAKE_SOURCE_DIR})

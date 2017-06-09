@@ -43,8 +43,6 @@ enum FootSensorRegion
    This would be like processFrame() function as in our code
  *---------------------------------------------------------------------------*/
 void RSWalkModule2014::processFrame() {
-
-
         // If we are changing commands we need to reset generators
 
         static WalkControl twalk = WALK_CONTROL_OFF;
@@ -258,14 +256,14 @@ void RSWalkModule2014::processFrame() {
         cum_f += delta.forward;
         cum_l += delta.left;
         cum_t += delta.turn;
-        // For debugging odometry
-/*	if (body.turn != 0){
-    cout << "Odometry Prev: " << prev.turn;
-    cout << " Odometry Delta: " << delta.turn;
-    cout << " Odometry: "  << odo.turn;
-    cout << " Cumulative Odometry: " << cum_t << endl;
-   }
- */
+        
+	// For debugging odometry DP
+//	if (body.turn != 0){
+//    		cout << "Odometry Prev: " << prev.turn;
+//		cout << " Odometry Delta: " << delta.turn;
+//    		cout << " Odometry: "  << odo.turn;
+//    		cout << " Cumulative Odometry: " << cum_t << endl;
+//   	}
 
         // Update walk_info_
 
@@ -313,6 +311,24 @@ void RSWalkModule2014::processFrame() {
         else{
                 kill_standing = true;
         }
+
+	cout << "bodyModel.WalkCycle.______" << endl;
+	cout << "useForwardL: " <<  bodyModel.walkCycle.useForwardL << endl;
+	cout << "useForwardR: " <<  bodyModel.walkCycle.useForwardR << endl;
+	cout << "useLeft: " <<  bodyModel.walkCycle.useLeft << endl;
+	cout << "useTurn: " <<  bodyModel.walkCycle.useTurn << endl;
+	cout << "T: " <<  bodyModel.walkCycle.T << endl;
+	cout << "t: " <<  bodyModel.walkCycle.t << "\n" << endl;
+
+	cout << "isDoubleSupportPhase: " << bodyModel.walkCycle.isDoubleSupportPhase() << "\n" << endl;
+
+	cout << "odo.forward: " << odo.forward << endl;
+	cout << "odo.left: " << odo.left << endl;
+	cout << "odo.turn: " << odo.turn << "\n" << endl;
+
+	cout << "body.forward: " << body.forward << endl;
+	cout << "body.left: " << body.left << endl;
+	cout << "body.turn: " << body.turn << "\n\n" << endl;
 
 }
 
@@ -441,9 +457,6 @@ void RSWalkModule2014::initSpecificModule() {
         x_target = -1;
         y_target = -1;
         wasKicking = false;
-
-
-
 }
 
 
