@@ -1,7 +1,7 @@
 #include "RSWalkModule2014.h"
 #include "WalkEnginePreProcessor.hpp"
 #include "Walk2014Generator.hpp"
-#include "Walk2015Generator.hpp"
+// #include "Walk2015Generator.hpp"
 #include "DistributedGenerator.hpp"
 #include "ClippedGenerator.hpp"
 
@@ -84,16 +84,16 @@ void RSWalkModule2014::processFrame() {
                 body.speed = 0.25;
                 body.isFast = false;
 
-                if (bodyModel.walkKick and walk_request_->walk_control_status_ == WALK_CONTROL_SET) { //target_walk_active_) {
-                        body.actionType = ActionCommand::Body::KICK;
-                        body.speed = 1.0; //7.0 * DEG_T_RAD;
-                        double ballX = 0.1;
-                        double ballY = 0;
-                        if (bodyModel.walkKickLeftLeg) body.foot = ActionCommand::Body::LEFT;
-                        else body.foot = ActionCommand::Body::RIGHT;
-                } else {
-                        bodyModel.walkKick = false;
-                }
+                // if (bodyModel.walkKick and walk_request_->walk_control_status_ == WALK_CONTROL_SET) { //target_walk_active_) {
+                //         body.actionType = ActionCommand::Body::KICK;
+                //         body.speed = 1.0; //7.0 * DEG_T_RAD;
+                //         double ballX = 0.1;
+                //         double ballY = 0;
+                //         if (bodyModel.walkKickLeftLeg) body.foot = ActionCommand::Body::LEFT;
+                //         else body.foot = ActionCommand::Body::RIGHT;
+                // } else {
+                //         bodyModel.walkKick = false;
+                // }
 
         }
 
@@ -150,7 +150,7 @@ void RSWalkModule2014::processFrame() {
                 else {
                         cout << "A GyroX calibration was triggered, offsetX set to: " << offsetX << endl;
                 }
-                last_gyroX_time = frame_info_->seconds_since_start;
+                last_gyroX_time += 0.1;
         }
         else {
                 if (DEBUG_OUTPUT) cout << "avg_delta_gyroX is: " << avg_delta_gyroX <<  " GyroX not stable, no calibration" << endl;
@@ -176,7 +176,7 @@ void RSWalkModule2014::processFrame() {
                 else {
                         cout << "A GyroY calibration was triggered, offsetY set to: " << offsetY << endl;
                 }
-                last_gyroY_time = frame_info_->seconds_since_start;
+                last_gyroY_time += 0.1;
         }
         else {
                 if (DEBUG_OUTPUT) cout << "avg_delta_gyroY is: " << avg_delta_gyroY <<  " GyroY not stable, no calibration" << endl;
@@ -220,20 +220,20 @@ void RSWalkModule2014::processFrame() {
         bodyModel.update(&odo, sensors);
 
 
-        if (request.body.actionType == ActionCommand::Body::WALK && odometry_->walkDisabled) {
-                static int delay_ct = 0;
-                if (delay_ct % 100 == 0) //prev_command != walk_request_->motion_)
-                        speech_->say("Not Calibrated");
-                delay_ct++;
-                if(DEBUG_OUTPUT) cout << "Not calibrated" << endl;
-                if (odometry_->standing)
-                        request.body = ActionCommand::Body::STAND;
-                else
-                        request.body = ActionCommand::Body::NONE;
-        }
+        // if (request.body.actionType == ActionCommand::Body::WALK && odometry_->walkDisabled) {
+        //         static int delay_ct = 0;
+        //         if (delay_ct % 100 == 0) //prev_command != walk_request_->motion_)
+        //                 speech_->say("Not Calibrated");
+        //         delay_ct++;
+        //         if(DEBUG_OUTPUT) cout << "Not calibrated" << endl;
+        //         if (odometry_->standing)
+        //                 request.body = ActionCommand::Body::STAND;
+        //         else
+        //                 request.body = ActionCommand::Body::NONE;
+        // }
 
-        if(DEBUG_OUTPUT) printf("motion request: %s, prev: %s, body request: %i\n", WalkRequestBlock::getName(walk_request_->motion_), WalkRequestBlock::getName(prev_command), static_cast<int>(request.body.actionType));
-        prev_command = WalkRequestBlock::WALK;
+        // if(DEBUG_OUTPUT) printf("motion request: %s, prev: %s, body request: %i\n", WalkRequestBlock::getName(walk_request_->motion_), WalkRequestBlock::getName(prev_command), static_cast<int>(request.body.actionType));
+        prev_command = 1;
 
         bool requestWalkKick = bodyModel.walkKick;
         // Call the clipped generator which calls the distributed generator to produce walks, stands, etc.
@@ -241,15 +241,15 @@ void RSWalkModule2014::processFrame() {
 
 
 //	static int point_id_ = 0;
-        if (GSL_COLLECT_DATA && request.body.actionType == ActionCommand::Body::WALK)
-                writeDataToFile(sensors,joints);
+        // if (GSL_COLLECT_DATA && request.body.actionType == ActionCommand::Body::WALK)
+        //         writeDataToFile(sensors,joints);
 //	point_id_ ++;
 
         // We aren't setting arms any more so this isn't important unless we go back to it
         // Setting arms behind back makes us get caught less but then we can't counter balance rswalk
-        if ((frame_info_->seconds_since_start - last_walk_or_stand_) > 0.3) {
-                arm_state_ = -1;
-        }
+        // if ((frame_info_->seconds_since_start - last_walk_or_stand_) > 0.3) {
+        //         arm_state_ = -1;
+        // }
 
         // Update odometry
         static double cum_f=0, cum_l=0, cum_t=0;
@@ -273,9 +273,9 @@ void RSWalkModule2014::processFrame() {
         // Update
         wasKicking =false;
 
-        if (request.body.actionType == ActionCommand::Body::ActionType::NONE) {
-                return;
-        }
+        // if (request.body.actionType == ActionCommand::Body::ActionType::NONE) {
+        //         return;
+        // }
 
         // For setting arms
         last_walk_or_stand_ = 9999999;
@@ -293,7 +293,7 @@ void RSWalkModule2014::processFrame() {
 
         // if the robot has walked, listen to arm command from WalkGenerator, else do stiffness
 
-        selectivelySendStiffness(); // Only send stiffness if at least one joint has changed stiffness values by at least 0.01
+        // selectivelySendStiffness(); // Only send stiffness if at least one joint has changed stiffness values by at least 0.01
 //	setArms(commands_->angles_,0.01); // Arms getting stuck on robot front with rswalk. Needs tuning
 
 
@@ -341,6 +341,33 @@ RSWalkModule2014::RSWalkModule2014() :
         prevLeft(0),
         prevTurn(0)
 {
+
+         avg_gyroX = 0.0;
+     avg_delta_gyroX = 10.0; // this influence calibration speed at the first time when start motion
+     offsetX = 0.0;
+     last_gyroX = 0.0;
+     last_gyroX_time;
+     calX_count = 0; //number of calibration performed
+        
+         avg_gyroY = 0.0;
+     avg_delta_gyroY = 10.0; 
+     offsetY = 0.0;   
+     last_gyroY = 0.0;
+     last_gyroY_time;
+     calY_count = 0;
+    
+         avg_gyroZ = 0.0;
+     avg_delta_gyroZ = 10.0; 
+     offsetZ = 0.0;   
+     last_gyroZ;
+     last_gyroZ_time;
+     calZ_count = 0;
+
+         calibration_write_time = -1.0;
+     last_calibration_write = -1.0;
+    
+     hasWalked = false;
+
         utJointToRSJoint[HeadYaw] = RSJoints::HeadYaw;
         utJointToRSJoint[HeadPitch] = RSJoints::HeadPitch;
 
@@ -410,7 +437,7 @@ void RSWalkModule2014::initSpecificModule() {
         clipper = new ClippedGenerator((Generator*) new DistributedGenerator(config_path));
         readOptions(config_path);
         standing = false;
-        prev_command = WalkRequestBlock::NONE;
+        prev_command = 0;
         x_target = -1;
         y_target = -1;
         wasKicking = false;
@@ -446,12 +473,12 @@ const float RSWalkModule2014::STAND_ANGLES[NUM_JOINTS] = {
         -0.2
 };
 
-void RSWalkModule2014::selectivelySendStiffness() {
-        for (int i = 0; i < NUM_JOINTS; i++) {
-                if (fabs(joints_->stiffness_[i] - commands_->stiffness_[i]) > 0.01) {
-                        commands_->send_stiffness_ = true;
-                        commands_->stiffness_time_ = 10;
-                        return;
-                }
-        }
-}
+// void RSWalkModule2014::selectivelySendStiffness() {
+//         for (int i = 0; i < NUM_JOINTS; i++) {
+//                 if (fabs(joints_->stiffness_[i] - commands_->stiffness_[i]) > 0.01) {
+//                         commands_->send_stiffness_ = true;
+//                         commands_->stiffness_time_ = 10;
+//                         return;
+//                 }
+//         }
+// }

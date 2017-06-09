@@ -1,10 +1,10 @@
 #pragma once
 
-#include <WalkModule.h>
-#include <common/RobotInfo.h>
-#include <common/WorldObject.h>//for rswalk2014
-#include <memory/MemoryFrame.h>//for rswalk2014
-#include <memory/WalkRequestBlock.h>
+// #include <WalkModule.h>
+#include <RobotInfoII.h>
+// #include <common/WorldObject.h>//for rswalk2014
+// #include <memory/MemoryFrame.h>//for rswalk2014
+// #include <memory/WalkRequestBlock.h>
 #include "WalkEnginePreProcessor.hpp"
 #include "ClippedGenerator.hpp"
 #include "BodyModel.hpp"
@@ -20,37 +20,38 @@ class WalkingEngine;
 class Pose2D;
 //class Pose2DBH;
 
-class BodyModelBlock;
-class FrameInfoBlock;
-class GameStateBlock;
-class JointBlock;
-class JointCommandBlock;
-class KickRequestBlock;
-class OdometryBlock;
-class RobotInfoBlock;
-class SensorBlock;
-class WalkInfoBlock;
-class WalkParamBlock;
-class WalkRequestBlock;
-class WorldObjectBlock; //for rswalk2014
-class SpeechBlock;
-class RobotStateBlock;
+// class BodyModelBlock;
+// class FrameInfoBlock;
+// class GameStateBlock;
+// class JointBlock;
+// class JointCommandBlock;
+// class KickRequestBlock;
+// class OdometryBlock;
+// class RobotInfoBlock;
+// class SensorBlock;
+// class WalkInfoBlock;
+// class WalkParamBlock;
+// class WalkRequestBlock;
+// class WorldObjectBlock; //for rswalk2014
+// class SpeechBlock;
+// class RobotStateBlock;
 
-class RSWalkModule2014: public WalkModule {
+class RSWalkModule2014 {
     public:
         RSWalkModule2014();
         ~RSWalkModule2014();
 
-        void specifyMemoryDependency();
-        void specifyMemoryBlocks();
-        void initSpecificModule();
+        // void specifyMemoryDependency();
+        // void specifyMemoryBlocks();
+        // void initSpecificModule();
 
-	void processTargetModeWalk(ActionCommand::Body &body);
+	// void processTargetModeWalk(ActionCommand::Body &body);
+    void initSpecificModule();
 	void processWalkRequest(ActionCommand::Body &body);
         void processFrame();
 	void readOptions(std::string path);
-        void handleStepIntoKick();
-	void writeDataToFile(SensorValues sensors, JointValues joints);
+ //        void handleStepIntoKick();
+	// void writeDataToFile(SensorValues sensors, JointValues joints);
     private:
 /*        inline float circle(float x)
         {
@@ -77,7 +78,7 @@ class RSWalkModule2014: public WalkModule {
 //        void setMassCalibration();
 //        void setRobotDimensions();
 
-        void selectivelySendStiffness();
+        // void selectivelySendStiffness();
 
 //        void setPose2D(Pose2D &dest, const Pose2DBH &src);
 
@@ -95,22 +96,22 @@ class RSWalkModule2014: public WalkModule {
 
     private:
 	// MemoryFrame blocks
-        FrameInfoBlock *frame_info_;
-        JointBlock *raw_joints_;
-        JointBlock *joints_;
-        JointCommandBlock *commands_;
-        KickRequestBlock *kick_request_;
-        OdometryBlock *odometry_;
-        RobotInfoBlock *robot_info_;
-        SensorBlock *sensors_;
-        WalkInfoBlock *walk_info_;
-        WalkParamBlock *walk_params_;
-        WalkRequestBlock *walk_request_;
-        BodyModelBlock* body_model_;        
-	WorldObjectBlock* world_objects_;//for rswalk2014
-	SpeechBlock *speech_;
-	GameStateBlock *game_state_;
-  RobotStateBlock *robot_state_;
+ //        FrameInfoBlock *frame_info_;
+ //        JointBlock *raw_joints_;
+ //        JointBlock *joints_;
+ //        JointCommandBlock *commands_;
+ //        KickRequestBlock *kick_request_;
+ //        OdometryBlock *odometry_;
+ //        RobotInfoBlock *robot_info_;
+ //        SensorBlock *sensors_;
+ //        WalkInfoBlock *walk_info_;
+ //        WalkParamBlock *walk_params_;
+ //        WalkRequestBlock *walk_request_;
+ //        BodyModelBlock* body_model_;        
+	// WorldObjectBlock* world_objects_;//for rswalk2014
+	// SpeechBlock *speech_;
+	// GameStateBlock *game_state_;
+ //  RobotStateBlock *robot_state_;
 
 	// Walk member variables
 	ClippedGenerator* clipper;
@@ -124,7 +125,7 @@ class RSWalkModule2014: public WalkModule {
 
 	// standing value for RS - Josiah
 	volatile bool standing;
-	WalkRequestBlock::Motion prev_command;
+	int prev_command;
 
 	// For lag. Not sure if we will use - Josiah
 	std::vector<Odometry> odometryBuffer; 
@@ -178,10 +179,10 @@ class RSWalkModule2014: public WalkModule {
         //NormDist<float, 10, 100>* sagittal_normdist;
         //NormDist<float, 10, 100>* coronal_normdist;
 */
-        float turn_limit = 0.65f;
-        float walking_turn_limit = 0.35f;
-        const float walking_turn_threshold = 0.90f;
-        const float backwards_limit = -0.75f;
+        static const float turn_limit = 0.65f;
+        static const float walking_turn_limit = 0.35f;
+        static const float walking_turn_threshold = 0.90f;
+        static const float backwards_limit = -0.75f;
 /*
         // Direction change Walk
         bool dir_change_walk = false;
@@ -265,38 +266,38 @@ class RSWalkModule2014: public WalkModule {
 	ActionCommand::Body::Foot kick_foot;
 
 	// gyroscopes calibration
-        double window_size = 0.001; // 1/# of frames, this needs tuning
+       static const double window_size = 0.001; // 1/# of frames, this needs tuning
         // threshold for calibration: if change of gyro reading over last n frames is small enough
         // note that this is rad/sec, not rad/frame     
-        double delta_threshold = 1.0; // this needs tuning
-	double reset = 10.0;
+      static const  double delta_threshold = 1.0; // this needs tuning
+	static const double reset = 10.0;
 	
-        double avg_gyroX = 0.0;
-	double avg_delta_gyroX = 10.0; // this influence calibration speed at the first time when start motion
-	double offsetX = 0.0;
-	double last_gyroX = 0.0;
+        double avg_gyroX;
+	double avg_delta_gyroX; // this influence calibration speed at the first time when start motion
+	double offsetX;
+	double last_gyroX;
 	float last_gyroX_time;
-	int calX_count = 0; //number of calibration performed
+	int calX_count; //number of calibration performed
         
-        double avg_gyroY = 0.0;
-	double avg_delta_gyroY = 10.0; 
-	double offsetY = 0.0;	
-	double last_gyroY = 0.0;
+        double avg_gyroY;
+	double avg_delta_gyroY; 
+	double offsetY;	
+	double last_gyroY;
 	float last_gyroY_time;
-	int calY_count = 0;
+	int calY_count;
 	
-        double avg_gyroZ = 0.0;
-	double avg_delta_gyroZ = 10.0; 
-	double offsetZ = 0.0;	
+        double avg_gyroZ;
+	double avg_delta_gyroZ; 
+	double offsetZ;	
 	double last_gyroZ;
 	float last_gyroZ_time;
-	int calZ_count = 0;
+	int calZ_count;
 
-        double calibration_write_time = -1.0;
-	double last_calibration_write = -1.0;
+        double calibration_write_time;
+	double last_calibration_write;
 	
-	bool hasWalked = false;
-        std::ofstream outfile;
+	bool hasWalked;
+        // std::ofstream outfile;
 
 
     public:
