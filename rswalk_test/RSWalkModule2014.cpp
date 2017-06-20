@@ -658,6 +658,10 @@ void RSWalkModule2014::initSpecificModule() {
         }
         if (GSL_COLLECT_DATA)
                 outfile.open("gsl_joint_data.csv");
+
+
+        //Penn team put stuff here
+        myodo= Odometry(0,0,0);       
 }
 
 

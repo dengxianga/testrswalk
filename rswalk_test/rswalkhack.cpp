@@ -19,10 +19,14 @@
 
 #include <GyroConfig.h>
 
+
+
 #define ODOMETRY_LAG 8
 
 #define DEBUG_OUTPUT false
 #define GSL_COLLECT_DATA false
+
+
 
 enum FootSensorRegion
 {
@@ -37,7 +41,26 @@ enum FootSensorRegion
         none
 };
 
-
+void RSWalkModule2014::receiveSensedJoints(double * joints){
+        std::memcpy(&sensedJoints,joints,sizeof(double)*NUM_JOINTS);
+}
+void RSWalkModule2014::receiveSensorData(double * sensors){
+        std::memcpy(&sensorData,sensors,sizeof(double)*NUM_SENSORS);
+}
+void RSWalkModule2014::convertReceivedData2SensorVals(SensorValues & sensors){
+  for (int i=0;i<NUM_JOINTS;i++){
+    sensors.joints.angles[simJointToRSJoint[i]]=sensedJoints[i];
+    sensors.joints.temperatures[simJointToRSJoint[i]]=0; //TODO
+  }
+  for (int i=0;i<NUM_SENSORS;i++){
+    sensors.sensors[simSensorToRSSensor[i]]=sensorData[i];
+  }
+}
+void RSWalkModule2014::getjointcommand(double * q2go, double & size){
+        std::cout<<"desiredJoints[5] "<<desiredJoints[5]<<std::endl;
+        std::memcpy(q2go,&desiredJoints,sizeof(double)*NUM_JOINTS);;
+        size=NUM_JOINTS;
+}
 /*-----------------------------------------------------------------------------
  * Motion thread tick function (copy from runswift MotionAdapter.cpp)
    This would be like processFrame() function as in our code
@@ -54,13 +77,18 @@ void RSWalkModule2014::processFrame() {
         bodyModel.walkKickHeading = 0.0f;
 
         // 1. Need odometry to send to WalkGenerator. makeJoints updates odometry for localization
-        Odometry odo = Odometry(0.1,0,0);
+
+        //---------------Penn -----------
+        myodo.forward+=5;
+        Odometry odo = myodo;
+        //-----------------------------
         Odometry prev = Odometry(odo); // Another copy for after makeJoints call
 
         // 1.1 Get ball position relative to robot - this will be changed to a target position for line-up
         // This is for lining up to the ball
         double ballX;  double ballY;
-
+        ballX=50;
+        ballY=0;
 
         // 2. Convert our request to runswift request
         // 2.1 Head
@@ -74,24 +102,15 @@ void RSWalkModule2014::processFrame() {
 
                 if(DEBUG_OUTPUT) cout << "Requested: WALK\n";
                 body.actionType = ActionCommand::Body::WALK;
-                body.forward = 0.1;
-                body.left = 0;
-                body.turn = 0;
-                body.bend = 1;
+                body.forward = 30; // How far forward (negative for backwards)  (mm)
+                body.left = 0; // How far to the left (negative for rightwards) (mm)
+                body.turn = 0; // How much anti-clockwise turn (negative for clockwise) (rad)
+                body.bend = 1; // How much kick power (0.0-1.0)
                 body.power = 1;
-                body.speed = 0.25;
+                // Kick parameters
+                body.speed = 5;
                 body.isFast = false;
 
-                // if (bodyModel.walkKick and walk_request_->walk_control_status_ == WALK_CONTROL_SET) { //target_walk_active_) {
-                //         body.actionType = ActionCommand::Body::KICK;
-                //         body.speed = 1.0; //7.0 * DEG_T_RAD;
-                //         double ballX = 0.1;
-                //         double ballY = 0;
-                //         if (bodyModel.walkKickLeftLeg) body.foot = ActionCommand::Body::LEFT;
-                //         else body.foot = ActionCommand::Body::RIGHT;
-                // } else {
-                //         bodyModel.walkKick = false;
-                // }
 
         }
 
@@ -111,7 +130,11 @@ void RSWalkModule2014::processFrame() {
         for (int ut_ind=0; ut_ind<NUM_JOINTS; ut_ind++) {
                 if (ut_ind != RHipYawPitch) { // RS does not have this joint because RHYP is same as LHYP on Nao
                         int rs_ind = utJointToRSJoint[ut_ind];
-                        sensors.joints.angles[rs_ind] = 0; // changed from raw_joints - Josiah
+                        //sensors.joints.angles[rs_ind] = 0; // changed from raw_joints - Josiah
+
+                        // Penn -----------
+                        sensors.joints.angles[ut_ind]=joint_prev_commands[ut_ind];
+                        // -------------------
                         sensors.joints.temperatures[rs_ind] = 0;
                 }
         }
@@ -122,8 +145,8 @@ void RSWalkModule2014::processFrame() {
 
         // 3.2 Sensors
         for (int ut_ind=0; ut_ind<bumperRR + 1; ut_ind++) {
-                int rs_ind = utSensorToRSSensor[ut_ind];
-                sensors.sensors[rs_ind] = 0;
+                 
+                sensors.sensors[ut_ind] = 0;
         }
 
 
@@ -237,6 +260,15 @@ void RSWalkModule2014::processFrame() {
         // Call the clipped generator which calls the distributed generator to produce walks, stands, etc.
         JointValues joints = clipper->makeJoints(&request, &odo, sensors, bodyModel, ballX, ballY);
 
+        //-----Penn--------------------------
+        std::cout<<" Make joints ";
+        for (int q=0; q<NUM_JOINTS; q++) {
+                std::cout<<joints.angles[q]<<" ";
+                joint_prev_commands[q]=joints.angles[q];
+                desiredJoints[q]=joints.angles[simJointToRSJoint[q]];
+        }
+        std::cout<<std::endl;
+        //-----------------
 
 //	static int point_id_ = 0;
         // if (GSL_COLLECT_DATA && request.body.actionType == ActionCommand::Body::WALK)
@@ -257,13 +289,13 @@ void RSWalkModule2014::processFrame() {
         cum_l += delta.left;
         cum_t += delta.turn;
 
-	// For debugging odometry DP
+        // For debugging odometry DP
 //	if (body.turn != 0){
-//    		cout << "Odometry Prev: " << prev.turn;
+//        cout << "Odometry Prev: " << prev.turn;
 //		cout << " Odometry Delta: " << delta.turn;
-//    		cout << " Odometry: "  << odo.turn;
-//    		cout << " Cumulative Odometry: " << cum_t << endl;
-//   	}
+//        cout << " Odometry: "  << odo.turn;
+//        cout << " Cumulative Odometry: " << cum_t << endl;
+//    }
 
         // Update walk_info_
 
@@ -278,12 +310,7 @@ void RSWalkModule2014::processFrame() {
         // For setting arms
         last_walk_or_stand_ = 9999999;
 
-        // Convert RS joints to UT joints and write to commands memory block
 
-        // Ruohan: setting head stiffness was commented out in bhuman. Should ask Jake about this
-        // Jake: setting stiffness here is unnecessary and means we can never turn these off for testing.
-        //commands_->stiffness_[HeadPitch] = 1.0;
-        //commands_->stiffness_[HeadYaw] = 1.0;
 
 
         // Walk keeps falling backwards when knees over 100. Leaning forward helps some
@@ -312,23 +339,34 @@ void RSWalkModule2014::processFrame() {
                 kill_standing = true;
         }
 
-	cout << "bodyModel.WalkCycle.______" << endl;
-	cout << "useForwardL: " <<  bodyModel.walkCycle.useForwardL << endl;
-	cout << "useForwardR: " <<  bodyModel.walkCycle.useForwardR << endl;
-	cout << "useLeft: " <<  bodyModel.walkCycle.useLeft << endl;
-	cout << "useTurn: " <<  bodyModel.walkCycle.useTurn << endl;
-	cout << "T: " <<  bodyModel.walkCycle.T << endl;
-	cout << "t: " <<  bodyModel.walkCycle.t << "\n" << endl;
 
-	cout << "isDoubleSupportPhase: " << bodyModel.walkCycle.isDoubleSupportPhase() << "\n" << endl;
+        float forwardL, forwardR, leftL, leftR, turnLR, liftL, liftR;
+        // bodyModel.walkCycle.generateWalk(forwardL, forwardR, leftL, leftR, turnLR, liftL, liftR);
+        // cout<<"forwardL "<<forwardL<<endl;
+        // cout<<"forwardR "<<forwardR<<endl;
+        // cout<<"leftL "<<leftL<<endl;
+        // cout<<"leftR "<<leftR<<endl;
+        // cout<<"turnLR "<<turnLR<<endl;
+        // cout<<"liftL "<<liftL<<endl;
+        // cout<<"liftR "<<liftR<<endl;
 
-	cout << "odo.forward: " << odo.forward << endl;
-	cout << "odo.left: " << odo.left << endl;
-	cout << "odo.turn: " << odo.turn << "\n" << endl;
+        cout << "bodyModel.WalkCycle.______" << endl;
+        cout << "useForwardL: " <<  bodyModel.walkCycle.useForwardL << endl;
+        cout << "useForwardR: " <<  bodyModel.walkCycle.useForwardR << endl;
+        cout << "useLeft: " <<  bodyModel.walkCycle.useLeft << endl;
+        cout << "useTurn: " <<  bodyModel.walkCycle.useTurn << endl;
+        cout << "T: " <<  bodyModel.walkCycle.T << endl;
+        cout << "t: " <<  bodyModel.walkCycle.t << "\n" << endl;
 
-	cout << "body.forward: " << body.forward << endl;
-	cout << "body.left: " << body.left << endl;
-	cout << "body.turn: " << body.turn << "\n\n" << endl;
+        cout << "isDoubleSupportPhase: " << bodyModel.walkCycle.isDoubleSupportPhase() << "\n" << endl;
+
+        cout << "odo.forward: " << odo.forward << endl;
+        cout << "odo.left: " << odo.left << endl;
+        cout << "odo.turn: " << odo.turn << "\n" << endl;
+
+        cout << "body.forward: " << body.forward << endl;
+        cout << "body.left: " << body.left << endl;
+        cout << "body.turn: " << body.turn << "\n\n" << endl;
 
 }
 
@@ -358,83 +396,85 @@ RSWalkModule2014::RSWalkModule2014() :
         prevTurn(0)
 {
 
-         avg_gyroX = 0.0;
-     avg_delta_gyroX = 10.0; // this influence calibration speed at the first time when start motion
-     offsetX = 0.0;
-     last_gyroX = 0.0;
-     last_gyroX_time;
-     calX_count = 0; //number of calibration performed
+        avg_gyroX = 0.0;
+        avg_delta_gyroX = 10.0; // this influence calibration speed at the first time when start motion
+        offsetX = 0.0;
+        last_gyroX = 0.0;
+        last_gyroX_time;
+        calX_count = 0; //number of calibration performed
 
-         avg_gyroY = 0.0;
-     avg_delta_gyroY = 10.0;
-     offsetY = 0.0;
-     last_gyroY = 0.0;
-     last_gyroY_time;
-     calY_count = 0;
+        avg_gyroY = 0.0;
+        avg_delta_gyroY = 10.0;
+        offsetY = 0.0;
+        last_gyroY = 0.0;
+        last_gyroY_time;
+        calY_count = 0;
 
-         avg_gyroZ = 0.0;
-     avg_delta_gyroZ = 10.0;
-     offsetZ = 0.0;
-     last_gyroZ;
-     last_gyroZ_time;
-     calZ_count = 0;
+        avg_gyroZ = 0.0;
+        avg_delta_gyroZ = 10.0;
+        offsetZ = 0.0;
+        last_gyroZ;
+        last_gyroZ_time;
+        calZ_count = 0;
 
-         calibration_write_time = -1.0;
-     last_calibration_write = -1.0;
+        calibration_write_time = -1.0;
+        last_calibration_write = -1.0;
 
-     hasWalked = false;
+        hasWalked = false;
 
-        utJointToRSJoint[HeadYaw] = RSJoints::HeadYaw;
-        utJointToRSJoint[HeadPitch] = RSJoints::HeadPitch;
+        simJointToRSJoint[0] = RSJoints::HeadYaw;
+        simJointToRSJoint[1] = RSJoints::HeadPitch;
 
-        utJointToRSJoint[LShoulderPitch] = RSJoints::LShoulderPitch;
-        utJointToRSJoint[LShoulderRoll] = RSJoints::LShoulderRoll;
-        utJointToRSJoint[LElbowYaw] = RSJoints::LElbowYaw;
-        utJointToRSJoint[LElbowRoll] = RSJoints::LElbowRoll;
+        simJointToRSJoint[2] = RSJoints::LShoulderPitch;
+        simJointToRSJoint[3] = RSJoints::LShoulderRoll;
+        simJointToRSJoint[4] = RSJoints::LElbowYaw;
+        simJointToRSJoint[5] = RSJoints::LElbowRoll;
 
-        utJointToRSJoint[RShoulderPitch] = RSJoints::RShoulderPitch;
-        utJointToRSJoint[RShoulderRoll] = RSJoints::RShoulderRoll;
-        utJointToRSJoint[RElbowYaw] = RSJoints::RElbowYaw;
-        utJointToRSJoint[RElbowRoll] = RSJoints::RElbowRoll;
 
-        utJointToRSJoint[LHipYawPitch] = RSJoints::LHipYawPitch;
-        utJointToRSJoint[LHipRoll] = RSJoints::LHipRoll;
-        utJointToRSJoint[LHipPitch] = RSJoints::LHipPitch;
-        utJointToRSJoint[LKneePitch] = RSJoints::LKneePitch;
-        utJointToRSJoint[LAnklePitch] = RSJoints::LAnklePitch;
-        utJointToRSJoint[LAnkleRoll] = RSJoints::LAnkleRoll;
 
-        utJointToRSJoint[RHipYawPitch] = -1; //RSJoints::RHipYawPitch;
-        utJointToRSJoint[RHipRoll] = RSJoints::RHipRoll;
-        utJointToRSJoint[RHipPitch] = RSJoints::RHipPitch;
-        utJointToRSJoint[RKneePitch] = RSJoints::RKneePitch;
-        utJointToRSJoint[RAnklePitch] = RSJoints::RAnklePitch;
-        utJointToRSJoint[RAnkleRoll] = RSJoints::RAnkleRoll;
+        simJointToRSJoint[6] = RSJoints::LHipYawPitch;
+        simJointToRSJoint[7] = RSJoints::LHipRoll;
+        simJointToRSJoint[8] = RSJoints::LHipPitch;
+        simJointToRSJoint[9] = RSJoints::LKneePitch;
+        simJointToRSJoint[10] = RSJoints::LAnklePitch;
+        simJointToRSJoint[11] = RSJoints::LAnkleRoll;
+
+        simJointToRSJoint[12] = RSJoints::RShoulderPitch;
+        simJointToRSJoint[13] = RSJoints::RShoulderRoll;
+        simJointToRSJoint[14] = RSJoints::RElbowYaw;
+        simJointToRSJoint[15] = RSJoints::RElbowRoll;
+
+        simJointToRSJoint[16] = RSJoints::LHipYawPitch;
+        simJointToRSJoint[17] = RSJoints::RHipRoll;
+        simJointToRSJoint[18] = RSJoints::RHipPitch;
+        simJointToRSJoint[19] = RSJoints::RKneePitch;
+        simJointToRSJoint[20] = RSJoints::RAnklePitch;
+        simJointToRSJoint[21] = RSJoints::RAnkleRoll;
 
         // SENSOR VALUE CONVERSION
-        utSensorToRSSensor[gyroX] = RSSensors::InertialSensor_GyrX;
-        utSensorToRSSensor[gyroY] = RSSensors::InertialSensor_GyrY;
-        utSensorToRSSensor[gyroZ] = RSSensors::InertialSensor_GyrRef;
-        utSensorToRSSensor[accelX] = RSSensors::InertialSensor_AccX;
-        utSensorToRSSensor[accelY] = RSSensors::InertialSensor_AccY;
-        utSensorToRSSensor[accelZ] = RSSensors::InertialSensor_AccZ;
-        utSensorToRSSensor[angleX] = RSSensors::InertialSensor_AngleX;
-        utSensorToRSSensor[angleY] = RSSensors::InertialSensor_AngleY;
-        utSensorToRSSensor[angleZ] = RSSensors::InertialSensor_AngleZ;
-        utSensorToRSSensor[battery] = RSSensors::Battery_Current;
-        utSensorToRSSensor[fsrLFL] = RSSensors::LFoot_FSR_FrontLeft;
-        utSensorToRSSensor[fsrLFR] = RSSensors::LFoot_FSR_FrontRight;
-        utSensorToRSSensor[fsrLRL] = RSSensors::LFoot_FSR_RearLeft;
-        utSensorToRSSensor[fsrLRR] = RSSensors::LFoot_FSR_RearRight;
-        utSensorToRSSensor[fsrRFL] = RSSensors::RFoot_FSR_FrontLeft;
-        utSensorToRSSensor[fsrRFR] = RSSensors::RFoot_FSR_FrontRight;
-        utSensorToRSSensor[fsrRRL] = RSSensors::RFoot_FSR_RearLeft;
-        utSensorToRSSensor[fsrRRR] = RSSensors::RFoot_FSR_RearRight;
-        utSensorToRSSensor[centerButton] = RSSensors::ChestBoard_Button;
-        utSensorToRSSensor[bumperLL] = RSSensors::LFoot_Bumper_Left;
-        utSensorToRSSensor[bumperLR] = RSSensors::LFoot_Bumper_Right;
-        utSensorToRSSensor[bumperRL] = RSSensors::RFoot_Bumper_Left;
-        utSensorToRSSensor[bumperRR] = RSSensors::RFoot_Bumper_Right;
+        simSensorToRSSensor[0] = RSSensors::InertialSensor_GyrX;
+        simSensorToRSSensor[1] = RSSensors::InertialSensor_GyrY;
+        simSensorToRSSensor[2] = RSSensors::InertialSensor_GyrRef;
+        simSensorToRSSensor[3] = RSSensors::InertialSensor_AccX;
+        simSensorToRSSensor[4] = RSSensors::InertialSensor_AccY;
+        simSensorToRSSensor[5] = RSSensors::InertialSensor_AccZ;
+        simSensorToRSSensor[6] = RSSensors::InertialSensor_AngleX;
+        simSensorToRSSensor[7] = RSSensors::InertialSensor_AngleY;
+        simSensorToRSSensor[8] = RSSensors::InertialSensor_AngleZ;
+        simSensorToRSSensor[9] = RSSensors::Battery_Current;
+        simSensorToRSSensor[10] = RSSensors::LFoot_FSR_FrontLeft;
+        simSensorToRSSensor[11] = RSSensors::LFoot_FSR_FrontRight;
+        simSensorToRSSensor[12] = RSSensors::LFoot_FSR_RearLeft;
+        simSensorToRSSensor[13] = RSSensors::LFoot_FSR_RearRight;
+        simSensorToRSSensor[14] = RSSensors::RFoot_FSR_FrontLeft;
+        simSensorToRSSensor[15] = RSSensors::RFoot_FSR_FrontRight;
+        simSensorToRSSensor[16] = RSSensors::RFoot_FSR_RearLeft;
+        simSensorToRSSensor[17] = RSSensors::RFoot_FSR_RearRight;
+        simSensorToRSSensor[18] = RSSensors::ChestBoard_Button;
+        simSensorToRSSensor[19] = RSSensors::LFoot_Bumper_Left;
+        simSensorToRSSensor[20] = RSSensors::LFoot_Bumper_Right;
+        simSensorToRSSensor[21] = RSSensors::RFoot_Bumper_Left;
+        simSensorToRSSensor[22] = RSSensors::RFoot_Bumper_Right;
         // No UT Sensors for RSSensors RFoot_FSR_CenterOfPressure_X/Y, Battery_Charge or US, not sure what these are - Josiah
 
 

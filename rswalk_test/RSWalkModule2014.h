@@ -50,8 +50,27 @@ void initSpecificModule();
 void processWalkRequest(ActionCommand::Body &body);
 void processFrame();
 void readOptions(std::string path);
+
+
 //        void handleStepIntoKick();
 // void writeDataToFile(SensorValues sensors, JointValues joints);
+
+// Penn team put stuff here .....
+void receiveSensedJoints(double * joints);
+void receiveSensorData(double * sensors);
+void convertReceivedData2SensorVals(SensorValues & sensors);
+void getjointcommand(double * q2go, double & size);
+Odometry myodo;
+double joint_prev_commands[NUM_JOINTS];
+double sensedJoints[NUM_JOINTS]; //use simulation ordering of joints
+double desiredJoints[NUM_JOINTS];//use simulation ordering of joints
+double sensorData[NUM_SENSORS];
+int simJointToRSJoint[NUM_JOINTS];
+int simSensorToRSSensor[NUM_SENSORS];
+float curtime;
+//------------------------
+
+
 private:
 /*        inline float circle(float x)
         {
@@ -241,6 +260,7 @@ float walk_requested_start_time;
 //static const int jointMapping[NUM_JOINTS];
 int utJointToRSJoint[NUM_JOINTS];
 int utSensorToRSSensor[NUM_SENSORS];
+
 
 float kick_distance_;
 float kick_angle_;
